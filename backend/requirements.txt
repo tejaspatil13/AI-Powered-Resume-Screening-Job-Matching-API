@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+
+logging
+PyMuPDF
+
+sqlalchemy
+pydantic
+typing
