@@ -1,5 +1,5 @@
 fastapi
-uvicorn
+
 
 logging
 PyMuPDF
@@ -7,3 +7,13 @@ PyMuPDF
 sqlalchemy
 pydantic
 typing
+
+
+uvicorn[standard]
+sqlalchemy
+python-multipart
+
+langgraph
+langchain
+langchain-openai
+python-dotenv

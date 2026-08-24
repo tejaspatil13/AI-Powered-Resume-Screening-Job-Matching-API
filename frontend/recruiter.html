@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  >
+
+  <title>TalentFlow — Recruiter</title>
+
+  <link
+    rel="stylesheet"
+    href="style.css"
+  >
+</head>
+
+<body>
+
+<div class="app">
+
+  <!-- =========================
+       NAVIGATION
+  ========================== -->
+
+  <header class="nav">
+
+    <a
+      class="logo"
+      href="index.html"
+    >
+      <span class="logo-mark">✦</span>
+
+      <span>
+        talent<em>flow</em>
+      </span>
+    </a>
+
+
+    <nav class="nav-links">
+
+      <a href="index.html">
+        Candidate
+      </a>
+
+      <a
+        class="active"
+        href="recruiter.html"
+      >
+        Recruiter
+      </a>
+
+    </nav>
+
+
+    <div class="status">
+
+      <span class="dot"></span>
+
+      AI screening online
+
+    </div>
+
+  </header>
+
+
+  <!-- =========================
+       MAIN
+  ========================== -->
+
+  <main class="container">
+
+
+    <!-- =========================
+         RECRUITER DASHBOARD
+    ========================== -->
+
+    <section id="recruiter-dashboard">
+
+      <section class="hero">
+
+        <div>
+
+          <p class="eyebrow">
+            Recruiter workspace
+          </p>
+
+          <h1>
+            Your hiring,
+            <br>
+            in focus.
+          </h1>
+
+          <p>
+            A live view of every role and the candidates behind it.
+          </p>
+
+        </div>
+
+
+        <button
+          id="show-create-btn"
+          class="btn btn-primary"
+          type="button"
+        >
+          ＋ Add a role
+        </button>
+
+      </section>
+
+
+      <!-- =========================
+           METRICS
+      ========================== -->
+
+      <div class="metrics">
+
+        <div class="metric">
+
+          <span>
+            Total candidates
+          </span>
+
+          <strong id="candidate-count">
+            —
+          </strong>
+
+        </div>
+
+
+        <div class="metric">
+
+          <span>
+            Active roles
+          </span>
+
+          <strong id="role-count">
+            —
+          </strong>
+
+        </div>
+
+
+        <div class="metric">
+
+          <span>
+            Powered by
+          </span>
+
+          <strong>
+            AI
+          </strong>
+
+        </div>
+
+      </div>
+
+
+      <!-- ERROR -->
+
+      <div
+        id="recruiter-error"
+        class="error hidden"
+      ></div>
+
+
+      <!-- =========================
+           CREATE JOB
+      ========================== -->
+
+      <section
+        id="create-area"
+        class="panel hidden"
+        style="margin-bottom:18px"
+      >
+
+        <h2>
+          Create a role
+        </h2>
+
+
+        <form id="create-job-form">
+
+
+          <div class="field">
+
+            <label for="job-title">
+              Role title
+            </label>
+
+            <input
+              id="job-title"
+              type="text"
+              placeholder="e.g. Senior ML Engineer"
+              required
+            >
+
+          </div>
+
+
+          <div class="field">
+
+            <label
+              class="drop"
+              for="job-file"
+            >
+
+              <input
+                id="job-file"
+                type="file"
+                accept="application/pdf,.pdf"
+                required
+              >
+
+              <span style="font-size:30px">
+                ↑
+              </span>
+
+              <strong>
+                Upload job description PDF
+              </strong>
+
+              <span>
+                PDF only
+              </span>
+
+            </label>
+
+          </div>
+
+
+          <button
+            id="create-btn"
+            class="btn btn-primary"
+            type="submit"
+          >
+            Create role →
+          </button>
+
+        </form>
+
+      </section>
+
+
+      <!-- =========================
+           JOB CARDS
+      ========================== -->
+
+      <div
+        id="recruiter-content"
+        class="grid"
+      >
+
+        <div
+          class="loading"
+          style="grid-column:1/-1"
+        >
+
+          <div>
+
+            <div class="spinner"></div>
+
+            <p>
+              Loading recruiter workspace...
+            </p>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- =========================
+         SELECTED ROLE
+    ========================== -->
+
+    <section
+      id="recruiter-role-view"
+      class="hidden"
+    >
+
+      <a
+        class="back"
+        href="#"
+        id="back-to-recruiter"
+      >
+        ← Back to roles
+      </a>
+
+
+      <section class="hero">
+
+        <div>
+
+          <p class="eyebrow">
+            Candidate pipeline
+          </p>
+
+          <h1 id="role-title-view">
+            Role
+          </h1>
+
+          <p>
+            Resumes and screening results for this role.
+          </p>
+
+        </div>
+
+
+        <div class="stat">
+
+          <span>
+            Candidates
+          </span>
+
+          <strong id="resume-count-view">
+            0
+          </strong>
+
+        </div>
+
+      </section>
+
+
+      <!-- Candidate list -->
+
+      <div id="candidate-list">
+
+        <div class="loading">
+
+          <div>
+
+            <div class="spinner"></div>
+
+            <p>
+              Loading candidates...
+            </p>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- =========================
+       FOOTER
+  ========================== -->
+
+  <footer class="footer">
+
+    <span>
+      talentflow
+    </span>
+
+    <span>
+      Thoughtful hiring, powered by intelligence.
+    </span>
+
+  </footer>
+
+</div>
+
+
+<script src="app.js"></script>
+
+</body>
+
+</html>

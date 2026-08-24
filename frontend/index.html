@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TalentFlow — Candidate</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+
+  <header class="nav">
+    <a class="logo" href="index.html">
+      <span class="logo-mark">✦</span>
+      <span>talent<em>flow</em></span>
+    </a>
+    <nav class="nav-links">
+      <a class="active" href="index.html">Candidate</a>
+      <a href="recruiter.html">Recruiter</a>
+    </nav>
+    <div class="status"><span class="dot"></span>AI screening online</div>
+  </header>
+
+  <main class="container">
+
+    <!-- JOBS -->
+    <section id="jobs-view">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Candidate workspace</p>
+          <h1>Find work that fits.</h1>
+          <p>Choose a role, upload your resume, and let AI show you how your experience lines up with the job.</p>
+        </div>
+        <div class="stat">
+          <span>Open roles</span>
+          <strong id="job-count">—</strong>
+        </div>
+      </section>
+
+      <div id="jobs" class="grid">
+        <div class="loading" style="grid-column:1/-1">
+          <div><div class="spinner"></div><p>Loading open roles...</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- APPLICATION -->
+    <section id="application-view" class="hidden">
+      <a class="back" href="#" id="back-to-jobs">← Back to roles</a>
+
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Application</p>
+          <h1>Put your best work forward.</h1>
+          <p>Applying for <strong id="selected-job-title">your selected role</strong></p>
+        </div>
+      </section>
+
+      <div id="candidate-error" class="error hidden"></div>
+
+      <div class="layout">
+        <form id="resume-form" class="panel">
+          <h2>Your details</h2>
+
+          <div class="field">
+            <label for="candidate-name">Full name</label>
+            <input id="candidate-name" type="text" placeholder="e.g. Alex Morgan" required>
+          </div>
+
+          <h2>Resume</h2>
+
+          <label class="drop" for="resume-file">
+            <input id="resume-file" type="file" accept="application/pdf,.pdf" required>
+            <span style="font-size:30px">↑</span>
+            <strong>Drop your PDF here or click to browse</strong>
+            <span>PDF only</span>
+          </label>
+
+          <button id="upload-btn" class="btn btn-primary" type="submit">Upload resume →</button>
+        </form>
+
+        <aside class="panel dark note">
+          <span style="font-size:22px">✦</span>
+          <h3>What happens next?</h3>
+          <p>Your resume is compared with the selected job description. The AI looks at skills, experience, strengths, and gaps.</p>
+          <div class="steps">
+            <span>✓ Skills match</span>
+            <span>✓ Experience review</span>
+            <span>✓ Clear feedback</span>
+          </div>
+        </aside>
+      </div>
+
+      <section id="uploaded-panel" class="panel hidden reveal" style="margin-top:18px">
+        <h2>Resume ready</h2>
+        <div class="uploaded">
+          <span style="font-size:22px">✓</span>
+          <div>
+            <strong id="uploaded-name"></strong>
+            <small id="uploaded-meta"></small>
+          </div>
+        </div>
+        <button id="analyze-btn" class="btn btn-primary">Analyze resume ✦</button>
+      </section>
+
+      <section id="analysis-stage" class="analysis hidden">
+        <div class="orb">✦</div>
+        <p class="eyebrow">AI evaluation in progress</p>
+        <h1>Reading between<br>the lines.</h1>
+        <p>Comparing your resume with the role requirements.</p>
+        <div class="analysis-steps">
+          <span>✓ Parsing resume</span>
+          <span class="active">◌ Comparing skills</span>
+          <span>Reviewing experience</span>
+          <span>Generating evaluation</span>
+        </div>
+      </section>
+
+      <section id="result-stage" class="hidden">
+        <div class="result-head">
+          <div>
+            <p class="eyebrow">Your screening result</p>
+            <h1>A clear look at your fit.</h1>
+            <p id="result-job" style="color:var(--muted)"></p>
+          </div>
+          <div id="recommendation" class="pill"></div>
+        </div>
+
+        <div class="result-grid">
+          <section class="panel score">
+            <small>Overall match</small>
+            <div id="ring" class="ring">
+              <div class="ring-inner">
+                <strong id="score">0</strong><span>/100</span>
+              </div>
+            </div>
+            <h2 id="recommendation-copy"></h2>
+            <p style="color:var(--muted)">Based on the skills and experience in your resume.</p>
+          </section>
+
+          <section class="panel summary">
+            <h2>✦ AI summary</h2>
+            <p id="summary"></p>
+          </section>
+        </div>
+
+        <div id="details" class="detail-grid"></div>
+      </section>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <span>talentflow</span>
+    <span>Thoughtful hiring, powered by intelligence.</span>
+  </footer>
+
+</div>
+<script src="app.js"></script>
+</body>
+</html>
