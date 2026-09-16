@@ -448,28 +448,67 @@ def get_screening_history(db: Session = Depends(get_db)):
     return {"count": len(history), "history": history}
 
 
+
+
+
 # ============================================================
 # RECRUITER - FETCH RESUMES FROM GMAIL
 # ============================================================
 
-
 @app.post("/recruiter/jobs/{job_id}/gmail/fetch-resumes")
-def fetch_gmail_resumes(job_id: int, db: Session = Depends(get_db)):
+def fetch_gmail_resumes(
+    job_id: int,
+    db: Session = Depends(get_db)
+):
 
-    logger.info(f"Gmail resume fetch requested for job_id={job_id}")
+    logger.info(
+        f"Gmail resume fetch requested for job_id={job_id}"
+    )
 
     # --------------------------------------------------------
     # 1. Get job
     # --------------------------------------------------------
 
-    job = db.query(Job).filter(Job.id == job_id).first()
+    job = (
+        db.query(Job)
+        .filter(Job.id == job_id)
+        .first()
+    )
 
     if not job:
-
-        raise HTTPException(status_code=404, detail="Job not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Job not found"
+        )
 
     # --------------------------------------------------------
-    # 2. Create Gmail service
+    # 2. CLEAR PREVIOUS GMAIL DATA
+    # --------------------------------------------------------
+
+    old_resumes = (
+        db.query(GmailResume)
+        .filter(GmailResume.job_id == job_id)
+        .all()
+    )
+
+    for old_resume in old_resumes:
+
+        db.query(GmailScreening).filter(
+            GmailScreening.gmail_resume_id == old_resume.id
+        ).delete()
+
+    db.query(GmailResume).filter(
+        GmailResume.job_id == job_id
+    ).delete()
+
+    db.commit()
+
+    logger.info(
+        f"Previous Gmail resumes cleared for job_id={job_id}"
+    )
+
+    # --------------------------------------------------------
+    # 3. Create Gmail service
     # --------------------------------------------------------
 
     try:
@@ -478,63 +517,73 @@ def fetch_gmail_resumes(job_id: int, db: Session = Depends(get_db)):
 
     except Exception as e:
 
-        logger.exception("Failed to initialize Gmail service")
+        logger.exception(
+            "Failed to initialize Gmail service"
+        )
 
-        raise HTTPException(status_code=500, detail="Failed to connect to Gmail")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to connect to Gmail"
+        )
 
     # --------------------------------------------------------
-    # 3. Fetch resumes from Gmail
+    # 4. Fetch resumes from Gmail
     # --------------------------------------------------------
 
     try:
 
-        resumes = gmail_service.fetch_resumes(query="has:attachment")
+        resumes = gmail_service.fetch_resumes(
+            query="has:attachment"
+        )
 
     except Exception as e:
 
-        logger.exception("Failed to fetch Gmail resumes")
+        logger.exception(
+            "Failed to fetch Gmail resumes"
+        )
 
         raise HTTPException(
-            status_code=500, detail="Failed to fetch resumes from Gmail"
+            status_code=500,
+            detail="Failed to fetch resumes from Gmail"
         )
 
     # --------------------------------------------------------
-    # 4. Save resumes
+    # 5. REMOVE DUPLICATES FROM CURRENT FETCH
+    # --------------------------------------------------------
+
+    unique_resumes = []
+    seen = set()
+
+    for resume in resumes:
+
+        key = (
+            resume["gmail_message_id"],
+            resume["filename"].strip().lower()
+        )
+
+        if key in seen:
+            continue
+
+        seen.add(key)
+        unique_resumes.append(resume)
+
+    resumes = unique_resumes
+
+    logger.info(
+        f"Unique Gmail resumes found: "
+        f"job_id={job_id}, count={len(resumes)}"
+    )
+
+    # --------------------------------------------------------
+    # 6. Save unique resumes
     # --------------------------------------------------------
 
     saved_resumes = []
 
-    skipped_resumes = []
-
     for resume_data in resumes:
 
         message_id = resume_data["gmail_message_id"]
-
         attachment_id = resume_data["gmail_attachment_id"]
-
-        # ----------------------------------------------------
-        # Prevent duplicate resume
-        # ----------------------------------------------------
-
-        existing_resume = (
-            db.query(GmailResume)
-            .filter(
-                GmailResume.job_id == job_id,
-                GmailResume.gmail_message_id == message_id,
-                GmailResume.gmail_attachment_id == attachment_id,
-            )
-            .first()
-        )
-
-        if existing_resume:
-
-            skipped_resumes.append(resume_data["filename"])
-
-            continue
-
-        # ----------------------------------------------------
-        # Create GmailResume
-        # ----------------------------------------------------
 
         gmail_resume = GmailResume(
             job_id=job_id,
@@ -547,7 +596,6 @@ def fetch_gmail_resumes(job_id: int, db: Session = Depends(get_db)):
         )
 
         db.add(gmail_resume)
-
         db.flush()
 
         saved_resumes.append(
@@ -560,17 +608,19 @@ def fetch_gmail_resumes(job_id: int, db: Session = Depends(get_db)):
         )
 
     # --------------------------------------------------------
-    # 5. Commit everything
+    # 7. Commit
     # --------------------------------------------------------
 
     db.commit()
 
     logger.info(
-        f"Gmail resumes saved: " f"job_id={job_id}, " f"count={len(saved_resumes)}"
+        f"Gmail resumes saved: "
+        f"job_id={job_id}, "
+        f"count={len(saved_resumes)}"
     )
 
     # --------------------------------------------------------
-    # 6. Response
+    # 8. Response
     # --------------------------------------------------------
 
     return {
@@ -578,7 +628,7 @@ def fetch_gmail_resumes(job_id: int, db: Session = Depends(get_db)):
         "job_id": job_id,
         "job_title": job.title,
         "saved_count": len(saved_resumes),
-        "skipped_count": len(skipped_resumes),
+        "skipped_count": len(resumes) - len(saved_resumes),
         "resumes": saved_resumes,
     }
 
@@ -587,41 +637,110 @@ def fetch_gmail_resumes(job_id: int, db: Session = Depends(get_db)):
 # RECRUITER - SCREEN GMAIL RESUMES
 # ============================================================
 
-
 @app.post("/recruiter/jobs/{job_id}/gmail/screen")
-async def screen_gmail_resumes(job_id: int, db: Session = Depends(get_db)):
+async def screen_gmail_resumes(
+    job_id: int,
+    db: Session = Depends(get_db)
+):
 
-    logger.info(f"Gmail resume screening requested " f"for job_id={job_id}")
+    logger.info(
+        f"Gmail resume screening requested "
+        f"for job_id={job_id}"
+    )
 
     # --------------------------------------------------------
     # 1. Get job
     # --------------------------------------------------------
 
-    job = db.query(Job).filter(Job.id == job_id).first()
+    job = (
+        db.query(Job)
+        .filter(Job.id == job_id)
+        .first()
+    )
 
     if not job:
-
-        raise HTTPException(status_code=404, detail="Job not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Job not found"
+        )
 
     # --------------------------------------------------------
-    # 2. Get Gmail resumes for this job
+    # 2. Get Gmail resumes
     # --------------------------------------------------------
 
-    gmail_resumes = db.query(GmailResume).filter(GmailResume.job_id == job_id).all()
+    gmail_resumes = (
+        db.query(GmailResume)
+        .filter(GmailResume.job_id == job_id)
+        .all()
+    )
 
     if not gmail_resumes:
 
         raise HTTPException(
-            status_code=404, detail="No Gmail resumes found for this job"
+            status_code=404,
+            detail="No Gmail resumes found for this job"
         )
 
     results = []
 
     # --------------------------------------------------------
-    # 3. Screen every Gmail resume
+    # 3. Screen Gmail resumes
     # --------------------------------------------------------
 
     for resume in gmail_resumes:
+
+        # ----------------------------------------------------
+        # Check if already screened
+        # ----------------------------------------------------
+
+        existing_screening = (
+            db.query(GmailScreening)
+            .filter(
+                GmailScreening.gmail_resume_id == resume.id,
+                GmailScreening.job_id == job_id,
+            )
+            .order_by(
+                GmailScreening.id.desc()
+            )
+            .first()
+        )
+
+        # ----------------------------------------------------
+        # Already screened
+        # ----------------------------------------------------
+
+        if existing_screening:
+
+            try:
+
+                result = json.loads(
+                    existing_screening.result_json
+                )
+
+            except (
+                json.JSONDecodeError,
+                TypeError
+            ):
+
+                result = {}
+
+            results.append(
+                {
+                    "gmail_resume_id": resume.id,
+                    "candidate_name": resume.candidate_name,
+                    "email_address": resume.email_address,
+                    "filename": resume.filename,
+                    "overall_score": existing_screening.overall_score,
+                    "recommendation": existing_screening.recommendation,
+                    "result": result,
+                }
+            )
+
+            continue
+
+        # ----------------------------------------------------
+        # New resume → call LLM
+        # ----------------------------------------------------
 
         try:
 
@@ -637,44 +756,21 @@ async def screen_gmail_resumes(job_id: int, db: Session = Depends(get_db)):
 
             result_dict = result.model_dump()
 
-            # ------------------------------------------------
-            # Check whether already screened
-            # ------------------------------------------------
-
-            existing_screening = (
-                db.query(GmailScreening)
-                .filter(
-                    GmailScreening.gmail_resume_id == resume.id,
-                    GmailScreening.job_id == job_id,
-                )
-                .order_by(GmailScreening.id.desc())
-                .first()
+            screening = GmailScreening(
+                gmail_resume_id=resume.id,
+                job_id=job_id,
+                overall_score=result.overall_score,
+                recommendation=result.recommendation,
+                result_json=json.dumps(result_dict),
             )
 
-            if existing_screening:
-
-                existing_screening.overall_score = result.overall_score
-
-                existing_screening.recommendation = result.recommendation
-
-                existing_screening.result_json = json.dumps(result_dict)
-
-            else:
-
-                screening = GmailScreening(
-                    gmail_resume_id=resume.id,
-                    job_id=job_id,
-                    overall_score=result.overall_score,
-                    recommendation=result.recommendation,
-                    result_json=json.dumps(result_dict),
-                )
-
-                db.add(screening)
+            db.add(screening)
 
             results.append(
                 {
                     "gmail_resume_id": resume.id,
                     "candidate_name": resume.candidate_name,
+                    "email_address": resume.email_address,
                     "filename": resume.filename,
                     "overall_score": result.overall_score,
                     "recommendation": result.recommendation,
@@ -685,18 +781,30 @@ async def screen_gmail_resumes(job_id: int, db: Session = Depends(get_db)):
         except Exception as e:
 
             logger.exception(
-                f"Gmail resume screening failed " f"for resume_id={resume.id}"
+                f"Gmail resume screening failed "
+                f"for resume_id={resume.id}"
             )
 
             continue
 
+    # --------------------------------------------------------
+    # 4. Commit screenings
+    # --------------------------------------------------------
+
     db.commit()
 
     # --------------------------------------------------------
-    # 4. Sort highest score first
+    # 5. Sort highest score first
     # --------------------------------------------------------
 
-    results.sort(key=lambda x: x["overall_score"], reverse=True)
+    results.sort(
+        key=lambda x: x["overall_score"],
+        reverse=True
+    )
+
+    # --------------------------------------------------------
+    # 6. Response
+    # --------------------------------------------------------
 
     return {
         "message": "Gmail resumes screened successfully",
@@ -711,31 +819,64 @@ async def screen_gmail_resumes(job_id: int, db: Session = Depends(get_db)):
 # RECRUITER - TOP GMAIL CANDIDATES
 # ============================================================
 
-
 @app.get("/recruiter/jobs/{job_id}/gmail/top-resumes")
-def get_top_gmail_resumes(job_id: int, limit: int = 10, db: Session = Depends(get_db)):
+def get_top_gmail_resumes(
+    job_id: int,
+    limit: int = 10,
+    db: Session = Depends(get_db)
+):
 
-    job = db.query(Job).filter(Job.id == job_id).first()
+    logger.info(
+        f"Top Gmail resumes requested "
+        f"for job_id={job_id}"
+    )
+
+    # --------------------------------------------------------
+    # 1. Get job
+    # --------------------------------------------------------
+
+    job = (
+        db.query(Job)
+        .filter(Job.id == job_id)
+        .first()
+    )
 
     if not job:
+        raise HTTPException(
+            status_code=404,
+            detail="Job not found"
+        )
 
-        raise HTTPException(status_code=404, detail="Job not found")
+    # --------------------------------------------------------
+    # 2. Get top screenings
+    # --------------------------------------------------------
 
     screenings = (
         db.query(GmailScreening)
-        .filter(GmailScreening.job_id == job_id)
-        .order_by(GmailScreening.overall_score.desc())
+        .filter(
+            GmailScreening.job_id == job_id
+        )
+        .order_by(
+            GmailScreening.overall_score.desc()
+        )
         .limit(limit)
         .all()
     )
 
     candidates = []
 
+    # --------------------------------------------------------
+    # 3. Build candidate response
+    # --------------------------------------------------------
+
     for screening in screenings:
 
         resume = (
             db.query(GmailResume)
-            .filter(GmailResume.id == screening.gmail_resume_id)
+            .filter(
+                GmailResume.id ==
+                screening.gmail_resume_id
+            )
             .first()
         )
 
@@ -744,9 +885,14 @@ def get_top_gmail_resumes(job_id: int, limit: int = 10, db: Session = Depends(ge
 
         try:
 
-            result = json.loads(screening.result_json)
+            result = json.loads(
+                screening.result_json
+            )
 
-        except (json.JSONDecodeError, TypeError):
+        except (
+            json.JSONDecodeError,
+            TypeError
+        ):
 
             result = {}
 
@@ -761,6 +907,10 @@ def get_top_gmail_resumes(job_id: int, limit: int = 10, db: Session = Depends(ge
                 "result": result,
             }
         )
+
+    # --------------------------------------------------------
+    # 4. Response
+    # --------------------------------------------------------
 
     return {
         "job_id": job.id,
