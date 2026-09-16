@@ -5,6 +5,7 @@ from langchain_openai import ChatOpenAI
 
 from app.schemas.screening import ScreeningResult
 from dotenv import load_dotenv
+from langchain_groq import ChatGroq
 
 load_dotenv(override=True)
 
@@ -18,9 +19,13 @@ llm = ChatOpenAI(
     model="gpt-4o-mini",
     temperature=0
 )
+# llm = ChatGroq(
+#     model="openai/gpt-oss-20b",
+#     temperature=0
+# )
 
 
-structured_llm = llm.with_structured_output(ScreeningResult)
+structured_llm = llm.with_structured_output(ScreeningResult, method="json_schema", strict=True)
 
 
 def screen_candidate(state: ScreeningState):

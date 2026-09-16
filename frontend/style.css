@@ -809,4 +809,91 @@ body.modal-open {
 
   }
 
+
+
+}
+
+
+/* =========================================================
+   GMAIL RESUME SCREENING
+========================================================= */
+
+.gmail-status {
+  padding:14px 16px;
+  border-radius:14px;
+  background:#edf5f1;
+  color:var(--text);
+  font-size:13px;
+}
+
+.gmail-results {
+  display:grid;
+  gap:10px;
+}
+
+.gmail-result-row {
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:15px;
+  border:1px solid var(--line);
+  background:white;
+  border-radius:15px;
+}
+
+.gmail-rank {
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  background:var(--lime);
+  font-weight:900;
+  flex-shrink:0;
+}
+
+.gmail-candidate-info {
+  flex:1;
+  min-width:0;
+}
+
+.gmail-candidate-info strong {
+  display:block;
+}
+
+.gmail-candidate-info span {
+  display:block;
+  color:var(--muted);
+  font-size:12px;
+  margin-top:3px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.gmail-score {
+  text-align:right;
+  min-width:90px;
+}
+
+.gmail-score strong {
+  display:block;
+  font-size:28px;
+  color:var(--primary);
+  letter-spacing:-.06em;
+}
+
+.gmail-score span {
+  color:var(--muted);
+  font-size:10px;
+}
+
+@media(max-width:600px) {
+  .gmail-result-row {
+    align-items:flex-start;
+  }
+
+  .gmail-score {
+    min-width:70px;
+  }
 }

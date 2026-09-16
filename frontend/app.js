@@ -8,6 +8,7 @@ const $ = (id) => document.getElementById(id);
 
 async function api(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, options);
+
   const body = await response.json().catch(() => ({}));
 
   if (!response.ok) {
@@ -37,7 +38,9 @@ function escapeHtml(value) {
 
 function showError(id, message) {
   const box = $(id);
+
   if (!box) return;
+
   box.textContent = message;
   box.classList.remove("hidden");
 }
@@ -46,63 +49,113 @@ function clearError(id) {
   $(id)?.classList.add("hidden");
 }
 
+
 /* =========================================================
    CANDIDATE — JOBS
 ========================================================= */
 
 async function loadCandidateJobs() {
+
   const grid = $("jobs");
 
   try {
+
     const data = await api("/user/jobs");
+
     const jobs = data.jobs || [];
+
+    window.candidateJobs = jobs;
 
     $("job-count").textContent = jobs.length;
 
     grid.innerHTML = jobs.length
       ? jobs.map((job, index) => `
+
           <button
             class="card"
             style="animation-delay:${index * 70}ms"
             onclick="selectCandidateJob(${Number(job.job_id)})"
           >
-            <div class="card-icon">▦</div>
 
-            <div class="card-body">
-              <span class="eyebrow">Now hiring</span>
-              <h2>${escapeHtml(formatTitle(job.title))}</h2>
-              <p>${escapeHtml(job.title)}</p>
+            <div class="card-icon">
+              ▦
             </div>
 
-            <span class="arrow">→</span>
+            <div class="card-body">
+
+              <span class="eyebrow">
+                Now hiring
+              </span>
+
+              <h2>
+                ${escapeHtml(formatTitle(job.title))}
+              </h2>
+
+              <p>
+                ${escapeHtml(job.title)}
+              </p>
+
+            </div>
+
+            <span class="arrow">
+              →
+            </span>
+
           </button>
+
         `).join("")
+
       : `
-        <div class="empty" style="grid-column:1/-1">
-          <h2>No open roles yet</h2>
-          <p>There are no roles available right now.</p>
-        </div>
-      `;
+
+          <div
+            class="empty"
+            style="grid-column:1/-1"
+          >
+
+            <h2>
+              No open roles yet
+            </h2>
+
+            <p>
+              There are no roles available right now.
+            </p>
+
+          </div>
+
+        `;
+
   } catch (error) {
+
     grid.innerHTML = `
-      <div class="error" style="grid-column:1/-1">
+
+      <div
+        class="error"
+        style="grid-column:1/-1"
+      >
         ${escapeHtml(error.message)}
       </div>
+
     `;
+
   }
 }
 
+
 function selectCandidateJob(jobId) {
+
   const job = window.candidateJobs.find(
     item => Number(item.job_id) === Number(jobId)
   );
 
   if (!job) return;
 
-  sessionStorage.setItem("selectedJob", JSON.stringify({
-    job_id: Number(job.job_id),
-    title: job.title
-  }));
+  sessionStorage.setItem(
+    "selectedJob",
+    JSON.stringify({
+      job_id: Number(job.job_id),
+      title: job.title
+    })
+  );
 
   sessionStorage.removeItem("uploadedResume");
   sessionStorage.removeItem("screeningResult");
@@ -119,25 +172,38 @@ function selectCandidateJob(jobId) {
   $("result-stage").classList.add("hidden");
 
   $("resume-form").reset();
+
   clearError("candidate-error");
 
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
 }
 
+
 function showCandidateJobs() {
+
   $("application-view").classList.add("hidden");
   $("jobs-view").classList.remove("hidden");
 
   clearError("candidate-error");
-  window.scrollTo({ top: 0, behavior: "smooth" });
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
 }
+
 
 /* =========================================================
    CANDIDATE — UPLOAD
 ========================================================= */
 
 async function uploadCandidateResume(event) {
+
   event.preventDefault();
+
   clearError("candidate-error");
 
   const job = JSON.parse(
@@ -145,73 +211,124 @@ async function uploadCandidateResume(event) {
   );
 
   const file = $("resume-file").files[0];
-  const name = $("candidate-name").value.trim();
+
+  const name =
+    $("candidate-name").value.trim();
 
   if (!job) {
-    return showError("candidate-error", "Please select a job first.");
+
+    return showError(
+      "candidate-error",
+      "Please select a job first."
+    );
+
   }
 
   if (!file) {
-    return showError("candidate-error", "Please select your resume PDF.");
+
+    return showError(
+      "candidate-error",
+      "Please select your resume PDF."
+    );
+
   }
 
   if (!name) {
-    return showError("candidate-error", "Please enter your name.");
+
+    return showError(
+      "candidate-error",
+      "Please enter your name."
+    );
+
   }
 
   if (file.type !== "application/pdf") {
-    return showError("candidate-error", "Only PDF files are allowed.");
+
+    return showError(
+      "candidate-error",
+      "Only PDF files are allowed."
+    );
+
   }
 
   const button = $("upload-btn");
+
   button.disabled = true;
-  button.innerHTML = `<span class="spinner" style="width:17px;height:17px;border-width:2px"></span> Uploading...`;
+
+  button.innerHTML = `
+    <span
+      class="spinner"
+      style="width:17px;height:17px;border-width:2px"
+    ></span>
+    Uploading...
+  `;
 
   try {
+
     const form = new FormData();
 
-    /*
-      The user never enters job_id manually.
-      It comes from the job card they selected.
-    */
-    form.append("candidate_name", name);
-    form.append("job_id", String(job.job_id));
-    form.append("file", file);
+    form.append(
+      "candidate_name",
+      name
+    );
 
-    const result = await api("/user/resume/upload", {
-      method: "POST",
-      body: form
-    });
+    form.append(
+      "job_id",
+      String(job.job_id)
+    );
 
-    /*
-      resume_id is generated by the backend.
-      Save it for the Analyze button.
-    */
+    form.append(
+      "file",
+      file
+    );
+
+    const result = await api(
+      "/user/resume/upload",
+      {
+        method: "POST",
+        body: form
+      }
+    );
+
     sessionStorage.setItem(
       "uploadedResume",
       JSON.stringify(result)
     );
 
     $("resume-form").classList.add("hidden");
+
     $("uploaded-panel").classList.remove("hidden");
 
-    $("uploaded-name").textContent = result.filename;
+    $("uploaded-name").textContent =
+      result.filename;
+
     $("uploaded-meta").textContent =
       `Resume uploaded successfully for ${formatTitle(job.title)}`;
 
   } catch (error) {
-    showError("candidate-error", error.message);
+
+    showError(
+      "candidate-error",
+      error.message
+    );
+
   } finally {
+
     button.disabled = false;
-    button.innerHTML = "Upload resume →";
+
+    button.innerHTML =
+      "Upload resume →";
+
   }
 }
+
 
 /* =========================================================
    CANDIDATE — SCREEN
 ========================================================= */
 
 async function analyzeResume() {
+
   clearError("candidate-error");
 
   const job = JSON.parse(
@@ -223,33 +340,48 @@ async function analyzeResume() {
   );
 
   if (!job) {
-    return showError("candidate-error", "Selected job not found.");
+
+    return showError(
+      "candidate-error",
+      "Selected job not found."
+    );
+
   }
 
   if (!uploaded) {
-    return showError("candidate-error", "Please upload your resume first.");
+
+    return showError(
+      "candidate-error",
+      "Please upload your resume first."
+    );
+
   }
 
   $("uploaded-panel").classList.add("hidden");
+
   $("analysis-stage").classList.remove("hidden");
 
   try {
-    /*
-      Both IDs are passed automatically:
-      - resume_id comes from upload response
-      - job_id comes from selected job
-      The user never types either ID.
-    */
-    const data = await api("/user/screen-resume", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        resume_id: uploaded.resume_id,
-        job_id: job.job_id
-      })
-    });
+
+    const data = await api(
+      "/user/screen-resume",
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json"
+        },
+
+        body: JSON.stringify({
+          resume_id:
+            uploaded.resume_id,
+
+          job_id:
+            job.job_id
+        })
+      }
+    );
 
     sessionStorage.setItem(
       "screeningResult",
@@ -259,80 +391,151 @@ async function analyzeResume() {
     renderCandidateResult(data);
 
   } catch (error) {
+
     $("analysis-stage").classList.add("hidden");
+
     $("uploaded-panel").classList.remove("hidden");
-    showError("candidate-error", error.message);
+
+    showError(
+      "candidate-error",
+      error.message
+    );
+
   }
 }
 
-function listSection(title, items, mode = "bullet") {
-  items = Array.isArray(items) ? items : [];
+
+/* =========================================================
+   CANDIDATE — RESULT HELPERS
+========================================================= */
+
+function listSection(
+  title,
+  items,
+  mode = "bullet"
+) {
+
+  items =
+    Array.isArray(items)
+      ? items
+      : [];
 
   let content;
 
   if (mode === "tag") {
+
     content = `
+
       <div class="items">
+
         ${
           items.length
+
             ? items.map(item => `
+
                 <span class="tag">
                   ${escapeHtml(item)}
                 </span>
+
               `).join("")
-            : `<span class="bullet">None returned.</span>`
+
+            : `<span class="bullet">
+                 None returned.
+               </span>`
         }
+
       </div>
+
     `;
+
   } else {
+
     content = `
+
       <div>
+
         ${
           items.length
+
             ? items.map(item => `
+
                 <div class="bullet">
-                  <b>•</b>
-                  <span>${escapeHtml(item)}</span>
+
+                  <b>
+                    •
+                  </b>
+
+                  <span>
+                    ${escapeHtml(item)}
+                  </span>
+
                 </div>
+
               `).join("")
-            : `<span class="bullet">None returned.</span>`
+
+            : `<span class="bullet">
+                 None returned.
+               </span>`
         }
+
       </div>
+
     `;
   }
 
   return `
+
     <section class="panel list reveal">
+
       <h2>
+
         ${title}
-        <span class="count">${items.length}</span>
+
+        <span class="count">
+          ${items.length}
+        </span>
+
       </h2>
+
       ${content}
+
     </section>
+
   `;
 }
 
+
 function renderCandidateResult(data) {
+
   $("analysis-stage").classList.add("hidden");
+
   $("result-stage").classList.remove("hidden");
 
-  const result = data.result || {};
+  const result =
+    data.result || {};
 
   $("result-job").textContent =
     `${data.candidate_name} · ${formatTitle(data.job_title)}`;
 
   const recommendation =
-    result.recommendation || "Evaluation complete";
+    result.recommendation ||
+    "Evaluation complete";
 
-  $("recommendation").textContent = recommendation;
-  $("recommendation-copy").textContent = recommendation;
+  $("recommendation").textContent =
+    recommendation;
+
+  $("recommendation-copy").textContent =
+    recommendation;
 
   $("summary").textContent =
-    result.summary || "No summary returned.";
+    result.summary ||
+    "No summary returned.";
 
-  const score = result.overall_score ?? 0;
+  const score =
+    result.overall_score ?? 0;
 
-  $("score").textContent = score;
+  $("score").textContent =
+    score;
 
   $("ring").style.setProperty(
     "--angle",
@@ -340,135 +543,251 @@ function renderCandidateResult(data) {
   );
 
   $("details").innerHTML = [
+
     listSection(
       "Matched skills",
       result.matched_skills,
       "tag"
     ),
+
     listSection(
       "Skills to develop",
       result.missing_skills,
       "tag"
     ),
+
     listSection(
       "Relevant experience",
       result.relevant_experience
     ),
+
     listSection(
       "Strengths",
       result.strengths
     ),
+
     listSection(
       "Gaps to consider",
       result.gaps,
       "tag"
     )
+
   ].join("");
 
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
 }
+
 
 /* =========================================================
    RECRUITER — DASHBOARD
 ========================================================= */
 
 async function loadRecruiter() {
-  const area = $("recruiter-content");
+
+  const area =
+    $("recruiter-content");
 
   try {
-    const data = await api("/recruiter/jobs/resumes");
-    const jobs = data.jobs || [];
 
-    window.recruiterJobs = jobs;
+    const data =
+      await api(
+        "/recruiter/jobs/resumes"
+      );
 
-    $("role-count").textContent = jobs.length;
+    const jobs =
+      data.jobs || [];
+
+    window.recruiterJobs =
+      jobs;
+
+    $("role-count").textContent =
+      jobs.length;
 
     $("candidate-count").textContent =
       jobs.reduce(
-        (sum, job) => sum + (job.resume_count || 0),
+        (sum, job) =>
+          sum +
+          (job.resume_count || 0),
         0
       );
 
-    area.innerHTML = jobs.length
-      ? jobs.map((job, index) => `
-          <button
-            class="card"
-            style="animation-delay:${index * 70}ms"
-            onclick="selectRecruiterJob(${Number(job.job_id)})"
-          >
-            <div class="card-icon">▦</div>
+    area.innerHTML =
+      jobs.length
 
-            <div class="card-body">
-              <span class="eyebrow">Role</span>
-              <h2>${escapeHtml(formatTitle(job.job_title))}</h2>
+        ? jobs.map(
+            (job, index) => `
+
+              <button
+                class="card"
+                style="animation-delay:${index * 70}ms"
+                onclick="selectRecruiterJob(${Number(job.job_id)})"
+              >
+
+                <div class="card-icon">
+                  ▦
+                </div>
+
+                <div class="card-body">
+
+                  <span class="eyebrow">
+                    Role
+                  </span>
+
+                  <h2>
+                    ${escapeHtml(
+                      formatTitle(job.job_title)
+                    )}
+                  </h2>
+
+                  <p>
+
+                    ${job.resume_count}
+
+                    candidate${
+                      job.resume_count === 1
+                        ? ""
+                        : "s"
+                    }
+
+                  </p>
+
+                </div>
+
+                <span class="arrow">
+                  →
+                </span>
+
+              </button>
+
+            `
+          ).join("")
+
+        : `
+
+            <div
+              class="empty"
+              style="grid-column:1/-1"
+            >
+
+              <h2>
+                No roles created
+              </h2>
+
               <p>
-                ${job.resume_count}
-                candidate${job.resume_count === 1 ? "" : "s"}
+                Upload your first job description.
               </p>
+
             </div>
 
-            <span class="arrow">→</span>
-          </button>
-        `).join("")
-      : `
-          <div class="empty" style="grid-column:1/-1">
-            <h2>No roles created</h2>
-            <p>Upload your first job description.</p>
-          </div>
-        `;
+          `;
 
   } catch (error) {
+
     area.innerHTML = `
-      <div class="error" style="grid-column:1/-1">
+
+      <div
+        class="error"
+        style="grid-column:1/-1"
+      >
+
         ${escapeHtml(error.message)}
+
       </div>
+
     `;
+
   }
 }
 
+
+/* =========================================================
+   RECRUITER — SELECT JOB
+========================================================= */
+
 function selectRecruiterJob(jobId) {
-  const job = window.recruiterJobs.find(
-    item => Number(item.job_id) === Number(jobId)
-  );
+
+  const job =
+    window.recruiterJobs.find(
+      item =>
+        Number(item.job_id) ===
+        Number(jobId)
+    );
 
   if (!job) return;
 
-  $("recruiter-dashboard").classList.add("hidden");
-  $("recruiter-role-view").classList.remove("hidden");
+  /*
+   * Remember currently selected job.
+   */
+  window.selectedRecruiterJobId =
+    Number(jobId);
+
+  $("recruiter-dashboard")
+    .classList
+    .add("hidden");
+
+  $("recruiter-role-view")
+    .classList
+    .remove("hidden");
+
+  /*
+   * Reset Gmail section
+   * whenever another job is opened.
+   */
+  resetGmailUI();
 
   renderRecruiterRole(job);
 
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
 }
+
 
 function showRecruiterDashboard() {
-  $("recruiter-role-view").classList.add("hidden");
-  $("recruiter-dashboard").classList.remove("hidden");
 
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  $("recruiter-role-view")
+    .classList
+    .add("hidden");
+
+  $("recruiter-dashboard")
+    .classList
+    .remove("hidden");
+
+  window.selectedRecruiterJobId =
+    null;
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
 }
 
+
 /* =========================================================
-   RECRUITER — ROLE/CANDIDATES
-========================================================= */
-/* =========================================================
-   RECRUITER — ROLE/CANDIDATES
+   RECRUITER — ROLE / NORMAL CANDIDATES
 ========================================================= */
 
-async function renderRecruiterRole(selectedJob) {
+async function renderRecruiterRole(
+  selectedJob
+) {
 
   $("role-title-view").textContent =
-    formatTitle(selectedJob.job_title);
+    formatTitle(
+      selectedJob.job_title
+    );
 
   $("resume-count-view").textContent =
     selectedJob.resume_count || 0;
 
-
   const list =
     $("candidate-list");
 
-
   list.innerHTML = `
+
     <div class="loading">
 
       <div>
@@ -482,21 +801,15 @@ async function renderRecruiterRole(selectedJob) {
       </div>
 
     </div>
-  `;
 
+  `;
 
   try {
 
-    /*
-      Always get fresh data.
-
-      This is important because the recruiter
-      needs to see the latest screening result.
-    */
-
     const data =
-      await api("/recruiter/jobs/resumes");
-
+      await api(
+        "/recruiter/jobs/resumes"
+      );
 
     const job =
       (data.jobs || []).find(
@@ -505,10 +818,10 @@ async function renderRecruiterRole(selectedJob) {
           Number(selectedJob.job_id)
       );
 
-
     if (!job) {
 
       list.innerHTML = `
+
         <div class="empty">
 
           <h2>
@@ -520,27 +833,25 @@ async function renderRecruiterRole(selectedJob) {
           </p>
 
         </div>
+
       `;
 
       return;
     }
 
-
     $("role-title-view").textContent =
       formatTitle(job.job_title);
-
 
     $("resume-count-view").textContent =
       job.resume_count || 0;
 
-
     const resumes =
       job.resumes || [];
-
 
     if (!resumes.length) {
 
       list.innerHTML = `
+
         <div class="empty">
 
           <h2>
@@ -553,15 +864,11 @@ async function renderRecruiterRole(selectedJob) {
           </p>
 
         </div>
+
       `;
 
       return;
     }
-
-
-    /*
-      Candidate cards
-    */
 
     list.innerHTML =
       resumes.map(
@@ -570,26 +877,21 @@ async function renderRecruiterRole(selectedJob) {
           const screening =
             candidate.screening;
 
-
           const result =
             screening?.result || {};
-
 
           const score =
             screening?.overall_score ??
             result.overall_score ??
             null;
 
-
           const recommendation =
             screening?.recommendation ??
             result.recommendation ??
             null;
 
-
           const matchedSkills =
             result.matched_skills || [];
-
 
           return `
 
@@ -606,9 +908,6 @@ async function renderRecruiterRole(selectedJob) {
               "
             >
 
-
-              <!-- Avatar -->
-
               <div class="avatar">
 
                 ${escapeHtml(
@@ -619,39 +918,27 @@ async function renderRecruiterRole(selectedJob) {
 
               </div>
 
-
-              <!-- Candidate information -->
-
               <div class="candidate-info">
 
                 <strong>
-
                   ${escapeHtml(
                     candidate.candidate_name
                   )}
-
                 </strong>
 
-
                 <span>
-
                   ▣
-
                   ${escapeHtml(
                     candidate.filename
                   )}
-
                 </span>
-
 
                 ${
                   matchedSkills.length
 
                     ? `
 
-                      <div
-                        class="candidate-skills"
-                      >
+                      <div class="candidate-skills">
 
                         ${
                           matchedSkills
@@ -681,9 +968,6 @@ async function renderRecruiterRole(selectedJob) {
 
               </div>
 
-
-              <!-- Score -->
-
               <div class="candidate-score">
 
                 ${
@@ -700,10 +984,12 @@ async function renderRecruiterRole(selectedJob) {
                       </span>
 
                       <small>
+
                         ${escapeHtml(
                           recommendation ||
                           "Screened"
                         )}
+
                       </small>
 
                     `
@@ -719,13 +1005,9 @@ async function renderRecruiterRole(selectedJob) {
 
               </div>
 
-
-              <!-- Arrow -->
-
               <span class="candidate-open">
                 →
               </span>
-
 
             </button>
 
@@ -733,7 +1015,6 @@ async function renderRecruiterRole(selectedJob) {
 
         }
       ).join("");
-
 
   } catch (error) {
 
@@ -750,8 +1031,597 @@ async function renderRecruiterRole(selectedJob) {
     `;
 
   }
-
 }
+
+
+/* =========================================================
+   GMAIL — RESET UI
+========================================================= */
+
+function resetGmailUI() {
+
+  const status =
+    $("gmail-status");
+
+  const results =
+    $("gmail-results");
+
+  if (status) {
+
+    status.classList.add(
+      "hidden"
+    );
+
+    status.innerHTML = "";
+
+  }
+
+  if (results) {
+
+    results.classList.add(
+      "hidden"
+    );
+
+    results.innerHTML = "";
+
+  }
+
+  const button =
+    $("fetch-gmail-btn");
+
+  if (button) {
+
+    button.disabled = false;
+
+    button.innerHTML =
+      "Fetch from Gmail →";
+
+  }
+}
+
+
+/* =========================================================
+   GMAIL — FETCH + SCREEN + RANK
+========================================================= */
+
+async function fetchGmailResumes(
+  jobId
+) {
+
+  clearError(
+    "recruiter-error"
+  );
+
+  const button =
+    $("fetch-gmail-btn");
+
+  const status =
+    $("gmail-status");
+
+  const results =
+    $("gmail-results");
+
+  if (!button) {
+
+    console.error(
+      "Fetch Gmail button not found."
+    );
+
+    return;
+  }
+
+  button.disabled = true;
+
+  button.innerHTML = `
+
+    <span
+      class="spinner"
+      style="width:17px;height:17px;border-width:2px"
+    ></span>
+
+    Fetching...
+
+  `;
+
+  if (status) {
+
+    status.classList.remove(
+      "hidden"
+    );
+
+    status.innerHTML = `
+
+      <strong>
+        Connecting to Gmail...
+      </strong>
+
+      <div
+        style="margin-top:5px;color:var(--muted)"
+      >
+        Searching for resume attachments.
+      </div>
+
+    `;
+
+  }
+
+  if (results) {
+
+    results.classList.add(
+      "hidden"
+    );
+
+  }
+
+  try {
+
+    /* =====================================================
+       STEP 1 — FETCH FROM GMAIL
+    ===================================================== */
+
+    if (status) {
+
+      status.innerHTML = `
+
+        <strong>
+          Fetching resumes from Gmail...
+        </strong>
+
+        <div
+          style="margin-top:5px;color:var(--muted)"
+        >
+          Please wait while TalentFlow reads
+          the resume attachments.
+        </div>
+
+      `;
+
+    }
+
+    const fetchData =
+      await api(
+        `/recruiter/jobs/${jobId}/gmail/fetch-resumes`,
+        {
+          method: "POST"
+        }
+      );
+
+    const savedCount =
+      fetchData.saved_count || 0;
+
+    const skippedCount =
+      fetchData.skipped_count || 0;
+
+    if (status) {
+
+      status.innerHTML = `
+
+        <strong>
+          ✓ Gmail resumes fetched
+        </strong>
+
+        <div
+          style="margin-top:5px;color:var(--muted)"
+        >
+
+          ${savedCount}
+          new resume${
+            savedCount === 1
+              ? ""
+              : "s"
+          }
+
+          found.
+
+          ${
+            skippedCount
+              ? `
+                ${skippedCount}
+                already imported.
+              `
+              : ""
+          }
+
+        </div>
+
+      `;
+
+    }
+
+
+    /* =====================================================
+       STEP 2 — SCREEN ALL GMAIL RESUMES
+    ===================================================== */
+
+    if (status) {
+
+      status.innerHTML += `
+
+        <div
+          style="margin-top:12px"
+        >
+
+          <strong>
+            AI screening in progress...
+          </strong>
+
+          <div
+            style="margin-top:5px;color:var(--muted)"
+          >
+            Comparing resumes with the
+            ${escapeHtml(
+              $("role-title-view").textContent
+            )} job description.
+          </div>
+
+        </div>
+
+      `;
+
+    }
+
+    await api(
+      `/recruiter/jobs/${jobId}/gmail/screen`,
+      {
+        method: "POST"
+      }
+    );
+
+
+    /* =====================================================
+       STEP 3 — GET TOP / RANKED CANDIDATES
+    ===================================================== */
+
+    if (status) {
+
+      status.innerHTML += `
+
+        <div
+          style="margin-top:12px"
+        >
+
+          <strong>
+            Ranking candidates...
+          </strong>
+
+        </div>
+
+      `;
+
+    }
+
+    const topData =
+      await api(
+        `/recruiter/jobs/${jobId}/gmail/top-resumes?limit=10`
+      );
+
+
+    /* =====================================================
+       STEP 4 — DISPLAY RESULTS
+    ===================================================== */
+
+    renderGmailResults(
+      topData
+    );
+
+    if (status) {
+
+      status.innerHTML = `
+
+        <strong>
+          ✓ Gmail screening complete
+        </strong>
+
+        <div
+          style="margin-top:5px;color:var(--muted)"
+        >
+
+          ${
+            topData.candidate_count || 0
+          }
+
+          candidate${
+            topData.candidate_count === 1
+              ? ""
+              : "s"
+          }
+
+          ranked for this role.
+
+        </div>
+
+      `;
+
+    }
+
+
+    /* =====================================================
+       STEP 5 — REFRESH NORMAL CANDIDATE COUNT
+    ===================================================== */
+
+    try {
+
+      const roleData =
+        await api(
+          "/recruiter/jobs/resumes"
+        );
+
+      const updatedJob =
+        (roleData.jobs || []).find(
+          item =>
+            Number(item.job_id) ===
+            Number(jobId)
+        );
+
+      if (updatedJob) {
+
+        $("resume-count-view")
+          .textContent =
+          updatedJob.resume_count || 0;
+
+      }
+
+    } catch (refreshError) {
+
+      console.warn(
+        "Could not refresh candidate count:",
+        refreshError
+      );
+
+    }
+
+  } catch (error) {
+
+    console.error(
+      "Gmail workflow failed:",
+      error
+    );
+
+    if (status) {
+
+      status.classList.remove(
+        "hidden"
+      );
+
+      status.innerHTML = `
+
+        <strong>
+          Gmail screening failed
+        </strong>
+
+        <div
+          style="margin-top:5px"
+        >
+          ${escapeHtml(
+            error.message
+          )}
+        </div>
+
+      `;
+
+    }
+
+  } finally {
+
+    button.disabled = false;
+
+    button.innerHTML =
+      "Fetch from Gmail →";
+
+  }
+}
+
+
+/* =========================================================
+   GMAIL — DISPLAY RANKED CANDIDATES
+========================================================= */
+
+function renderGmailResults(
+  data
+) {
+
+  const container =
+    $("gmail-results");
+
+  if (!container) return;
+
+  const candidates =
+    data.candidates || [];
+
+  if (!candidates.length) {
+
+    container.innerHTML = `
+
+      <div class="empty">
+
+        <h2>
+          No screened Gmail candidates
+        </h2>
+
+        <p>
+          No resume candidates were available
+          for this role.
+        </p>
+
+      </div>
+
+    `;
+
+    container.classList.remove(
+      "hidden"
+    );
+
+    return;
+  }
+
+  container.innerHTML = `
+
+    <div
+      style="margin-bottom:12px"
+    >
+
+      <p class="eyebrow">
+        Ranked Gmail candidates
+      </p>
+
+      <h2 style="margin:0">
+        Top ${candidates.length} candidates
+      </h2>
+
+    </div>
+
+    <div class="gmail-results">
+
+      ${
+        candidates.map(
+          (candidate, index) => {
+
+            const result =
+              candidate.result || {};
+
+            const matchedSkills =
+              result.matched_skills || [];
+
+            return `
+
+              <div
+                class="gmail-result-row"
+              >
+
+                <div class="gmail-rank">
+                  ${index + 1}
+                </div>
+
+
+                <div
+                  class="gmail-candidate-info"
+                >
+
+                  <strong>
+
+                    ${escapeHtml(
+                      candidate.candidate_name ||
+                      "Unknown candidate"
+                    )}
+
+                  </strong>
+
+                  <span>
+
+                    ▣
+
+                    ${escapeHtml(
+                      candidate.filename || ""
+                    )}
+
+                  </span>
+
+                  ${
+                    candidate.email_address
+                      ? `
+
+                        <span>
+                          ✉
+                          ${escapeHtml(
+                            candidate.email_address
+                          )}
+                        </span>
+
+                      `
+                      : ""
+                  }
+
+
+                  ${
+                    matchedSkills.length
+
+                      ? `
+
+                        <div
+                          class="candidate-skills"
+                        >
+
+                          ${
+                            matchedSkills
+                              .slice(0, 5)
+                              .map(
+                                skill => `
+
+                                  <span
+                                    class="tag"
+                                  >
+
+                                    ${escapeHtml(
+                                      skill
+                                    )}
+
+                                  </span>
+
+                                `
+                              )
+                              .join("")
+                          }
+
+                        </div>
+
+                      `
+
+                      : ""
+                  }
+
+                </div>
+
+
+                <div
+                  class="gmail-score"
+                >
+
+                  <strong>
+                    ${
+                      candidate.overall_score ??
+                      "—"
+                    }
+                  </strong>
+
+                  <span>
+                    /100
+                  </span>
+
+                  <small
+                    style="
+                      display:block;
+                      margin-top:3px;
+                      color:var(--muted);
+                      font-size:10px;
+                    "
+                  >
+
+                    ${escapeHtml(
+                      candidate.recommendation ||
+                      "Screened"
+                    )}
+
+                  </small>
+
+                </div>
+
+              </div>
+
+            `;
+
+          }
+        ).join("")
+      }
+
+    </div>
+
+  `;
+
+  container.classList.remove(
+    "hidden"
+  );
+}
+
 
 /* =========================================================
    RECRUITER — CANDIDATE DETAILS
@@ -764,18 +1634,10 @@ async function openCandidateDetails(
 
   try {
 
-    /*
-      Get the latest recruiter data.
-
-      We don't ask the recruiter to enter
-      resume_id or job_id manually.
-    */
-
     const data =
       await api(
         "/recruiter/jobs/resumes"
       );
-
 
     const job =
       (data.jobs || []).find(
@@ -784,14 +1646,12 @@ async function openCandidateDetails(
           Number(jobId)
       );
 
-
     const candidate =
       job?.resumes?.find(
         item =>
           Number(item.resume_id) ===
           Number(resumeId)
       );
-
 
     if (!candidate) {
 
@@ -801,19 +1661,18 @@ async function openCandidateDetails(
 
     }
 
-
     showCandidateDetails(
       candidate,
       job
     );
 
-
   } catch (error) {
 
-    alert(error.message);
+    alert(
+      error.message
+    );
 
   }
-
 }
 
 
@@ -825,38 +1684,29 @@ function showCandidateDetails(
   const screening =
     candidate.screening;
 
-
   const result =
     screening?.result || {};
-
 
   const score =
     screening?.overall_score ??
     result.overall_score ??
     null;
 
-
   const recommendation =
     screening?.recommendation ??
     result.recommendation ??
     "Not screened";
 
-
   const modal =
     document.createElement("div");
-
 
   modal.id =
     "candidate-modal";
 
-
   modal.className =
     "candidate-modal";
 
-
   modal.innerHTML = `
-
-    <!-- BACKDROP -->
 
     <div
       class="candidate-modal-backdrop"
@@ -864,12 +1714,9 @@ function showCandidateDetails(
     ></div>
 
 
-    <!-- MODAL -->
-
-    <div class="candidate-modal-panel">
-
-
-      <!-- CLOSE -->
+    <div
+      class="candidate-modal-panel"
+    >
 
       <button
         type="button"
@@ -881,12 +1728,9 @@ function showCandidateDetails(
       </button>
 
 
-      <!-- =====================
-           HEADER
-      ====================== -->
-
-      <div class="modal-header">
-
+      <div
+        class="modal-header"
+      >
 
         <div class="modal-avatar">
 
@@ -905,7 +1749,6 @@ function showCandidateDetails(
             Candidate screening
           </p>
 
-
           <h2>
 
             ${escapeHtml(
@@ -913,7 +1756,6 @@ function showCandidateDetails(
             )}
 
           </h2>
-
 
           <p class="modal-file">
 
@@ -924,7 +1766,6 @@ function showCandidateDetails(
             )}
 
           </p>
-
 
           <p class="modal-role">
 
@@ -938,8 +1779,6 @@ function showCandidateDetails(
 
         </div>
 
-
-        <!-- SCORE -->
 
         <div class="modal-score">
 
@@ -957,11 +1796,9 @@ function showCandidateDetails(
                 </span>
 
                 <small>
-
                   ${escapeHtml(
                     recommendation
                   )}
-
                 </small>
 
               `
@@ -981,7 +1818,6 @@ function showCandidateDetails(
 
         </div>
 
-
       </div>
 
 
@@ -989,11 +1825,6 @@ function showCandidateDetails(
         screening
 
           ? `
-
-
-            <!-- =====================
-                 RECOMMENDATION
-            ====================== -->
 
             <div
               class="modal-recommendation"
@@ -1004,35 +1835,23 @@ function showCandidateDetails(
               </span>
 
               <strong>
-
                 ${escapeHtml(
                   recommendation
                 )}
-
               </strong>
 
             </div>
 
 
-            <!-- =====================
-                 AI SUMMARY
-            ====================== -->
-
             <section
-              class="
-                modal-section
-                modal-summary
-              "
+              class="modal-section modal-summary"
             >
 
               <p
-                class="
-                  modal-section-label
-                "
+                class="modal-section-label"
               >
                 AI Summary
               </p>
-
 
               <p>
 
@@ -1046,16 +1865,9 @@ function showCandidateDetails(
             </section>
 
 
-            <!-- =====================
-                 DETAIL GRID
-            ====================== -->
-
             <div
               class="modal-detail-grid"
             >
-
-
-              <!-- MATCHED SKILLS -->
 
               <section
                 class="modal-section"
@@ -1064,7 +1876,6 @@ function showCandidateDetails(
                 <h3>
                   Matched Skills
                 </h3>
-
 
                 <div
                   class="modal-tags"
@@ -1081,11 +1892,9 @@ function showCandidateDetails(
                         <span
                           class="modal-tag"
                         >
-
                           ${escapeHtml(
                             skill
                           )}
-
                         </span>
 
                       `
@@ -1098,8 +1907,6 @@ function showCandidateDetails(
               </section>
 
 
-              <!-- MISSING SKILLS -->
-
               <section
                 class="modal-section"
               >
@@ -1107,7 +1914,6 @@ function showCandidateDetails(
                 <h3>
                   Missing Skills
                 </h3>
-
 
                 <div
                   class="modal-tags"
@@ -1122,16 +1928,11 @@ function showCandidateDetails(
                       skill => `
 
                         <span
-                          class="
-                            modal-tag
-                            missing
-                          "
+                          class="modal-tag missing"
                         >
-
                           ${escapeHtml(
                             skill
                           )}
-
                         </span>
 
                       `
@@ -1144,8 +1945,6 @@ function showCandidateDetails(
               </section>
 
 
-              <!-- EXPERIENCE -->
-
               <section
                 class="modal-section"
               >
@@ -1153,7 +1952,6 @@ function showCandidateDetails(
                 <h3>
                   Relevant Experience
                 </h3>
-
 
                 <div
                   class="modal-bullets"
@@ -1174,11 +1972,9 @@ function showCandidateDetails(
                           </span>
 
                           <p>
-
                             ${escapeHtml(
                               item
                             )}
-
                           </p>
 
                         </div>
@@ -1193,8 +1989,6 @@ function showCandidateDetails(
               </section>
 
 
-              <!-- STRENGTHS -->
-
               <section
                 class="modal-section"
               >
@@ -1202,7 +1996,6 @@ function showCandidateDetails(
                 <h3>
                   Strengths
                 </h3>
-
 
                 <div
                   class="modal-bullets"
@@ -1223,11 +2016,9 @@ function showCandidateDetails(
                           </span>
 
                           <p>
-
                             ${escapeHtml(
                               item
                             )}
-
                           </p>
 
                         </div>
@@ -1242,8 +2033,6 @@ function showCandidateDetails(
               </section>
 
 
-              <!-- GAPS -->
-
               <section
                 class="modal-section"
               >
@@ -1251,7 +2040,6 @@ function showCandidateDetails(
                 <h3>
                   Gaps
                 </h3>
-
 
                 <div
                   class="modal-bullets"
@@ -1272,11 +2060,9 @@ function showCandidateDetails(
                           </span>
 
                           <p>
-
                             ${escapeHtml(
                               item
                             )}
-
                           </p>
 
                         </div>
@@ -1290,16 +2076,11 @@ function showCandidateDetails(
 
               </section>
 
-
             </div>
-
 
           `
 
           : `
-
-
-            <!-- NOT SCREENED -->
 
             <div
               class="modal-not-screened"
@@ -1317,25 +2098,20 @@ function showCandidateDetails(
 
             </div>
 
-
           `
       }
-
 
     </div>
 
   `;
 
-
   document.body.appendChild(
     modal
   );
 
-
   document.body.classList.add(
     "modal-open"
   );
-
 
   requestAnimationFrame(() => {
 
@@ -1344,7 +2120,6 @@ function showCandidateDetails(
     );
 
   });
-
 }
 
 
@@ -1355,14 +2130,11 @@ function closeCandidateDetails() {
       "candidate-modal"
     );
 
-
   if (!modal) return;
-
 
   modal.classList.remove(
     "show"
   );
-
 
   setTimeout(() => {
 
@@ -1373,7 +2145,6 @@ function closeCandidateDetails() {
     );
 
   }, 220);
-
 }
 
 
@@ -1391,156 +2162,237 @@ document.addEventListener(
 
   }
 );
+
+
 /* =========================================================
    RECRUITER — CREATE JOB
 ========================================================= */
 
 async function createJob(event) {
+
   event.preventDefault();
 
-  clearError("recruiter-error");
+  clearError(
+    "recruiter-error"
+  );
 
-  const title = $("job-title").value.trim();
-  const file = $("job-file").files[0];
+  const title =
+    $("job-title")
+      .value
+      .trim();
+
+  const file =
+    $("job-file")
+      .files[0];
 
   if (!title || !file) {
+
     return showError(
       "recruiter-error",
       "Enter a role title and choose a PDF."
     );
+
   }
 
-  if (file.type !== "application/pdf") {
+  if (
+    file.type !==
+    "application/pdf"
+  ) {
+
     return showError(
       "recruiter-error",
       "Only PDF job descriptions are allowed."
     );
+
   }
 
-  const button = $("create-btn");
+  const button =
+    $("create-btn");
 
   button.disabled = true;
-  button.innerHTML = "Uploading...";
+
+  button.innerHTML =
+    "Uploading...";
 
   try {
-    const form = new FormData();
 
-    form.append("title", title);
-    form.append("file", file);
+    const form =
+      new FormData();
 
-    await api("/recruiter/job-description/upload", {
-      method: "POST",
-      body: form
-    });
+    form.append(
+      "title",
+      title
+    );
 
-    $("create-job-form").reset();
-    $("create-area").classList.add("hidden");
+    form.append(
+      "file",
+      file
+    );
+
+    await api(
+      "/recruiter/job-description/upload",
+      {
+        method: "POST",
+        body: form
+      }
+    );
+
+    $("create-job-form")
+      .reset();
+
+    $("create-area")
+      .classList
+      .add("hidden");
 
     await loadRecruiter();
 
   } catch (error) {
+
     showError(
       "recruiter-error",
       error.message
     );
+
   } finally {
+
     button.disabled = false;
-    button.innerHTML = "Create role →";
+
+    button.innerHTML =
+      "Create role →";
+
   }
 }
+
 
 /* =========================================================
    INITIALIZATION
 ========================================================= */
 
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener(
+  "DOMContentLoaded",
+  async () => {
 
-  /* Candidate page */
-  if ($("jobs")) {
+    /* =====================================================
+       CANDIDATE PAGE
+    ===================================================== */
 
-    window.candidateJobs = [];
+    if ($("jobs")) {
 
-    try {
-      const data = await api("/user/jobs");
-      window.candidateJobs = data.jobs || [];
+      await loadCandidateJobs();
 
-      $("job-count").textContent =
-        window.candidateJobs.length;
-
-      $("jobs").innerHTML =
-        window.candidateJobs.length
-          ? window.candidateJobs.map((job, index) => `
-              <button
-                class="card"
-                style="animation-delay:${index * 70}ms"
-                onclick="selectCandidateJob(${Number(job.job_id)})"
-              >
-                <div class="card-icon">▦</div>
-                <div class="card-body">
-                  <span class="eyebrow">Now hiring</span>
-                  <h2>${escapeHtml(formatTitle(job.title))}</h2>
-                  <p>${escapeHtml(job.title)}</p>
-                </div>
-                <span class="arrow">→</span>
-              </button>
-            `).join("")
-          : `
-            <div class="empty" style="grid-column:1/-1">
-              <h2>No open roles yet</h2>
-              <p>There are no roles available right now.</p>
-            </div>
-          `;
-    } catch (error) {
-      $("jobs").innerHTML = `
-        <div class="error" style="grid-column:1/-1">
-          ${escapeHtml(error.message)}
-        </div>
-      `;
     }
+
+
+    /* =====================================================
+       CANDIDATE EVENTS
+    ===================================================== */
+
+    $("back-to-jobs")
+      ?.addEventListener(
+        "click",
+        event => {
+
+          event.preventDefault();
+
+          showCandidateJobs();
+
+        }
+      );
+
+
+    $("resume-form")
+      ?.addEventListener(
+        "submit",
+        uploadCandidateResume
+      );
+
+
+    $("analyze-btn")
+      ?.addEventListener(
+        "click",
+        analyzeResume
+      );
+
+
+    /* =====================================================
+       RECRUITER PAGE
+    ===================================================== */
+
+    if ($("recruiter-content")) {
+
+      await loadRecruiter();
+
+    }
+
+
+    /* =====================================================
+       CREATE JOB
+    ===================================================== */
+
+    $("show-create-btn")
+      ?.addEventListener(
+        "click",
+        () => {
+
+          $("create-area")
+            .classList
+            .toggle("hidden");
+
+        }
+      );
+
+
+    $("create-job-form")
+      ?.addEventListener(
+        "submit",
+        createJob
+      );
+
+
+    /* =====================================================
+       BACK TO RECRUITER
+    ===================================================== */
+
+    $("back-to-recruiter")
+      ?.addEventListener(
+        "click",
+        event => {
+
+          event.preventDefault();
+
+          showRecruiterDashboard();
+
+        }
+      );
+
+
+    /* =====================================================
+       GMAIL FETCH BUTTON
+    ===================================================== */
+
+    $("fetch-gmail-btn")
+      ?.addEventListener(
+        "click",
+        () => {
+
+          const jobId =
+            window.selectedRecruiterJobId;
+
+          if (!jobId) {
+
+            return showError(
+              "recruiter-error",
+              "Please select a job first."
+            );
+
+          }
+
+          fetchGmailResumes(
+            jobId
+          );
+
+        }
+      );
+
   }
-
-  /* Candidate events */
-  $("back-to-jobs")?.addEventListener(
-    "click",
-    (event) => {
-      event.preventDefault();
-      showCandidateJobs();
-    }
-  );
-
-  $("resume-form")?.addEventListener(
-    "submit",
-    uploadCandidateResume
-  );
-
-  $("analyze-btn")?.addEventListener(
-    "click",
-    analyzeResume
-  );
-
-  /* Recruiter page */
-  if ($("recruiter-content")) {
-    loadRecruiter();
-  }
-
-  $("show-create-btn")?.addEventListener(
-    "click",
-    () => {
-      $("create-area").classList.toggle("hidden");
-    }
-  );
-
-  $("create-job-form")?.addEventListener(
-    "submit",
-    createJob
-  );
-
-  $("back-to-recruiter")?.addEventListener(
-    "click",
-    (event) => {
-      event.preventDefault();
-      showRecruiterDashboard();
-    }
-  );
-
-});
+);
