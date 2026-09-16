@@ -1,15 +1,34 @@
 import base64
 from email.utils import parseaddr
 from io import BytesIO
-
+import os
+import json
 import fitz
 from docx import Document
 from langchain_google_community import GmailToolkit
 
 
+
+
+def setup_gmail_credentials():
+    credentials_json = os.getenv("GMAIL_CREDENTIALS_JSON")
+    token_json = os.getenv("GMAIL_TOKEN_JSON")
+
+    if credentials_json:
+        with open("credentials.json", "w") as f:
+            f.write(credentials_json)
+
+    if token_json:
+        with open("token.json", "w") as f:
+            f.write(token_json)
+
+
+
 class GmailResumeService:
 
     def __init__(self):
+
+        setup_gmail_credentials()
 
         self.toolkit = GmailToolkit()
 

@@ -1,25 +1,23 @@
 fastapi
-
-
-logging
-PyMuPDF
-
-sqlalchemy
-pydantic
-typing
-
-
 uvicorn[standard]
-sqlalchemy
 python-multipart
+
+sqlalchemy
+psycopg2-binary
+pydantic
+
+PyMuPDF
+python-docx
 
 langgraph
 langchain
 langchain-openai
+langchain-groq
 python-dotenv
 
 langchain-google-community
 google-api-python-client
 google-auth-oauthlib
 google-auth-httplib2
+
 beautifulsoup4
