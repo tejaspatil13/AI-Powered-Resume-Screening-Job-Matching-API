@@ -1,4 +1,4 @@
-const API_URL = "https://ai-powered-resume-screening-job-matching-d816.onrender.com";
+const API_BASE = "https://ai-powered-resume-screening-job-matching-d816.onrender.com";
 
 
 /* =========================================================
