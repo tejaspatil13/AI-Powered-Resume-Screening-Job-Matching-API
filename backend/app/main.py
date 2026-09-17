@@ -24,8 +24,8 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://127.0.0.1:5500",
-        "http://localhost:5500",
+        "http://127.0.0.1:5555",
+        "http://localhost:5555",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -475,4 +475,78 @@ def get_job_screenings(
         "job_title": job.title,
         "candidate_count": len(results),
         "candidates": results
+    }
+
+
+@app.get("/screening/history")
+def get_screening_history(
+    job_id: int | None = None,
+    resume_id: int | None = None,
+    db: Session = Depends(get_db)
+):
+    logger.info(
+        f"Screening history requested: "
+        f"job_id={job_id}, resume_id={resume_id}"
+    )
+
+    query = db.query(Screening)
+
+    if job_id is not None:
+        query = query.filter(
+            Screening.job_id == job_id
+        )
+
+    if resume_id is not None:
+        query = query.filter(
+            Screening.resume_id == resume_id
+        )
+
+    screenings = (
+        query
+        .order_by(Screening.created_at.desc())
+        .all()
+    )
+
+    history = []
+
+    for screening in screenings:
+
+        resume = (
+            db.query(Resume)
+            .filter(Resume.id == screening.resume_id)
+            .first()
+        )
+
+        job = (
+            db.query(Job)
+            .filter(Job.id == screening.job_id)
+            .first()
+        )
+
+        if not resume or not job:
+            continue
+
+        try:
+            result = json.loads(
+                screening.result_json
+            )
+        except (json.JSONDecodeError, TypeError):
+            result = {}
+
+        history.append({
+            "screening_id": screening.id,
+            "resume_id": resume.id,
+            "job_id": job.id,
+            "candidate_name": resume.candidate_name,
+            "filename": resume.filename,
+            "job_title": job.title,
+            "overall_score": screening.overall_score,
+            "recommendation": screening.recommendation,
+            "result": result,
+            "created_at": screening.created_at
+        })
+
+    return {
+        "count": len(history),
+        "history": history
     }
