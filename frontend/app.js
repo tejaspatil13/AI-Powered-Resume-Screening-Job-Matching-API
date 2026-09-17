@@ -1,4 +1,5 @@
-const API_BASE = "https://ai-powered-resume-screening-job-mat-phi.vercel.app";
+const API_URL = "https://ai-powered-resume-screening-job-matching-d816.onrender.com";
+
 
 /* =========================================================
    HELPERS
